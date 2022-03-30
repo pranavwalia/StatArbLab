@@ -19,10 +19,16 @@ This class implements the distance approach to a pairs trading signal in 3 steps
 - Generates a signal according to a threshold
 - Outputs a backtest according to a brokerage fee template
 '''
-class DistanceApproach():
+class BasicDistanceApproach():
+
     def __init__(self) -> None:
         self.pairsData = None
         self.tradeData = None
+        self.NotEnoughColumnsException = 'Dataframe is missing columns. Check that you have both securities and date columns'
+        self.dateTimeException = 'Left-Most Column is not of type datetime64'
+        self.nonNumericalException = 'Detected non-numerical data-types to the right of date column'
+
+
 
     '''
     This Function sets the data set for generating possible pairs.
@@ -60,10 +66,11 @@ class DistanceApproach():
     '''
     @staticmethod
     def isDataWellFormed(data: pd.DataFrame) -> bool:
+
         t = lambda x: is_numeric_dtype(x) 
         if len(data.columns) <= 1:
             raise Exception('Dataframe is missing columns. Check that you have both securities and date columns')
-        elif data.dtypes[0] != 'datetime64':
+        elif data.dtypes[0] != 'datetime64[ns]':
            raise Exception('Left-Most Column is not of type datetime64')
         #Check if there is a non-numerical column to the right of date column
         elif False in list(data.apply(t)[1:]):
@@ -72,9 +79,10 @@ class DistanceApproach():
             return True
 
     '''
-    Generates Pairs
+    Generates Pairs:
+    Returns a dataframe with all the pair names and their distance values
     '''
-    def generatePairs(self,function):
+    def generatePairs(self,distanceFunc):
         pass
         
 
