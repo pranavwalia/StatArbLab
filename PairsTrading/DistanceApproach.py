@@ -1,5 +1,4 @@
 import pandas as pd
-from utilities import isSequenceOf
 from pandas.api.types import is_numeric_dtype
 
 '''
@@ -75,7 +74,7 @@ class DistanceApproach():
     '''
     Generates Pairs
     '''
-    def generatePairs(self,distanceFunc: function):
+    def generatePairs(self,function):
         pass
         
 
