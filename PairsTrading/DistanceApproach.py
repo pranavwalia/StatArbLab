@@ -3,6 +3,18 @@ from utilities import isSequenceOf
 from pandas.api.types import is_numeric_dtype
 
 '''
+This class stores distance functions that can be passed to the calculate pairs function of the DistanceApproach Class.
+'''
+class DistanceFunctions():
+    def __init(self) -> None:
+        pass
+    '''
+    Simple Euclidean Distance
+    '''
+    def euclideanDistance(a,b):
+        return (b-a)**2
+
+'''
 This class implements the distance approach to a pairs trading signal in 3 steps:
 - Orders and ranks pairs according to some distance metric
 - Generates a signal according to a threshold
@@ -29,6 +41,17 @@ class DistanceApproach():
             self.data = data
             return True
 
+    '''
+     This Function sets the data set for simulating trade data.
+
+    Make sure your data frame is formated according to the following structure
+    DateTime | Price Series A | Price Series B | Price Series C |...
+    Raises Exception if:
+    - Data doesn't have more than two columns
+    - Left-Most column is not of type datetime64
+    - If there are non-numerical data types 
+    Returns true if we can successfully set the pairs data
+    '''
     def setTradeData(self, data: pd.DataFrame) -> bool:
         if self.isDataWellFormed(data):
             self.tradeData = data
@@ -48,5 +71,14 @@ class DistanceApproach():
             raise Exception('Detected non-numerical data-types to the right of date column')
         else:
             return True
+
+    '''
+    Generates Pairs
+    '''
+    def generatePairs(self,distanceFunc: function):
+        pass
+        
+
+    
 
     
