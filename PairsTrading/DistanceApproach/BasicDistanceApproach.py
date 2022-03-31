@@ -2,7 +2,7 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from math import sqrt
 from DistanceFunctions import DistanceFunctions
-
+from typing import List
 
 def sample_brokerage(shares,trade_value):
     return 0.01*trade_value
@@ -18,13 +18,14 @@ class BasicDistanceApproach():
     '''
 
     def __init__(self) -> None:
-        self.pairs = None
+        self.trainPairs = List[pd.DataFrame]
+        self.testPairs = List[pd.DataFrame]
         self.pairsData = pd.DataFrame
-        self.tradeData = None
+        self.tradeData = pd.DataFrame
         self.NotEnoughColumnsException = 'Dataframe is missing columns. Check that you have both securities and date columns'
         self.dateTimeException = 'Left-Most Column is not of type datetime64'
         self.nonNumericalException = 'Detected non-numerical data-types to the right of date column'
-        self.signals = None
+        self.signals = List[pd.DataFrame]
 
 
    
@@ -94,25 +95,39 @@ class BasicDistanceApproach():
 
 
     #Todo: refactor this out of the class later 
-    def normalizeSeries(self, priceSeries: pd.Series):
-        return (priceSeries - min(priceSeries))/(max(priceSeries-min(priceSeries)))
+    def normalizeSeries(self, priceSeries: pd.Series, min1 = None, max1 = None):
+        min1 = min(priceSeries) if min1 == None else min1
+        max1 = max(priceSeries) if max1 == None else max1
+        return (priceSeries - min1)/(max1 - min1)
 
     
     def __normalizePairs(self):
         '''
         Private Method: Do not call outside of class
         Args:
-        takes a dataframe structured as follows:
+        Takes trainpairs and test pairs structured below and reformats:
         Date | security1 | security2
         Reformats as
         Date | security1 | security2 | security1_normalized | security2_normalized | normalized_spread
         '''  
-        for pair in self.pairs:
-            a = pair.columns[1]
-            b = pair.columns[2]
-            pair[a + '_norm'] = self.normalizeSeries(pair[a])
-            pair[b + '_norm'] = self.normalizeSeries(pair[b])
-            pair['Spread'] = pair[a + '__norm'] - pair[b + '__norm']
+        for trainPair, testPair in self.trainPairs, self.testPairs:
+            a = trainPair.columns[1]
+            b = trainPair.columns[2]
+            trainPair[a + '_norm'] = self.normalizeSeries(trainPair[a])
+            trainPair[b + '_norm'] = self.normalizeSeries(trainPair[b])
+            trainPair['Spread'] = trainPair[a + '__norm'] - trainPair[b + '__norm']
+            #Save the min and max from the train dataset to normalize the test dataset
+            mina = min(trainPair[a])
+            maxa = max(trainPair[a])
+            minb = min(trainPair[b])
+            maxb = max(trainPair[b])
+
+            a = testPair.columns[1]
+            b = testPair.columns[2]
+            testPair[a + '_norm'] = self.normalizeSeries(testPair[a], mina, maxa)
+            testPair[b + '_norm'] = self.normalizeSeries(testPair[b], minb, maxb)
+            testPair['Spread'] = testPair[a + '__norm'] - testPair[b + '__norm']
+
 
     def generatePairs(self, distanceFunc: DistanceFunctions.__call__, top: int):
         '''
@@ -129,18 +144,23 @@ class BasicDistanceApproach():
 
         Date | Asset_Price1 | Asset_Price2 | Asset_Price1_Normalized | Asset_Price2_Normalized | Normalized_Spread
         '''
-        allPairs = []
+        allPairs = List[pd.DataFrame]
+        tradePairs = List[pd.DataFrame]
         for i in self.pairsData.columns:
             for j in self.pairsData.columns:
                 if i != j:
-                    allPairs.append(self.pairsData[['Date',i,j]])
+                    allPairs.append(self.pairsData[['Date', i, j]])
 
         #Uses a lambda to calculate the distance metric for all pairs
-        #
         calcDistance = lambda x: distanceFunc(self.normalizeSeries(x.iloc[1]),self.normalizeSeries(x.iloc[2]))
         allPairs.sort(key=calcDistance)
         if top <= len(allPairs):
-            self.pairs = allPairs[0:top]
+            allPairs = allPairs[0:top]
+            self.trainPairs = allPairs 
+        #Select the pairs from the test dataset for the backtest later
+        for pair in allPairs:
+            tradePairs.append(self.tradeData[pair.columns])
+        self.testPairs = tradePairs     
         self.__normalizePairs()
 
    
@@ -148,21 +168,21 @@ class BasicDistanceApproach():
         '''
         Retrieves the stored pairs in the object. Raises an exception if the pairs have not yet been generated.
         '''
-        if self.pairs != None:
-            return self.pairs
+        if self.trainPairs != None:
+            return self.trainPairs
         else:
             raise Exception('Error: Pairs have not yet been generated.')
 
     
-    def addTradeSignals(threshold: int, brokerage):
+    def addTradeSignals(self, threshold: int, brokerage):
         '''
         Performs the following modifications to self.pairs:
 
         1. Adds a signal column to each data frame within the pairs list (self.pairs).
         A signal  is in the form of an integer:
-        1 -> Buy the spread
-        -1 -> Sell the spread
-        0 -> Close the position
+        1 -> Long A Short B
+        -1 -> Short A Long B
+        0 -> Flat
 
         2. Adds a returns column - The returns generated by trading the signal
 
@@ -175,9 +195,37 @@ class BasicDistanceApproach():
         If the spread exceeds the threshold of negative standard deviations - sell
         If the spread crosses 0 - close the position
         '''
-        pass
-    
-   
+        for pair in self.trainPairs:
+            sigma = int
+            mu = pair['Spread'].mean
+            squaredDiff = (pair['Spread'] - mu)**2
+            min1 = min(pair.iloc[1])
+            max1 = min(pair.iloc[1])
+            min2 = min(pair.iloc[2])
+            max2 = max(pair.iloc[2])
+            if len(pair.index > 0):
+                sigma = sqrt(sum(squaredDiff)/(len(pair.index) - 1))
+            else:
+                raise Exception('Cannot calculate signals: price rows missing')
+            
+            signalTracker = List[int]
+            def signalLogic(val):
+                f = lambda x: 1 if val >= threshold*sigma else (-1 if val <= -threshold*sigma else 0)
+                if len(signalTracker) == 0:
+                    signal = f(val)
+                    signalTracker.append(signal)
+                    return signal 
+                else:
+                    if val < 0 and signalTracker[-1] == 1 or val > 0 and signalTracker[-1] == -1:
+                        signalTracker.append(0)
+                        return 0
+                    else:
+                        signal = f(val)
+                        signalTracker.append(signal)
+                        return signal
+
+                
+         
     def plotEquityCurve():
         '''
         Provided you have already added the trade signals, returns a list of plots of each equity curve for each pair
