@@ -1,32 +1,28 @@
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
+from math import sqrt
+from DistanceFunctions import DistanceFunctions
+
+
+
 
 '''
-This class stores distance functions that can be passed to the calculate pairs function of the DistanceApproach Class.
-'''
-class DistanceFunctions():
-    def __init(self) -> None:
-        pass
-    '''
-    Simple Euclidean Distance
-    '''
-    def euclideanDistance(a,b):
-        return (b-a)**2
-
-'''
-This class implements the distance approach to a pairs trading signal in 3 steps:
-- Orders and ranks pairs according to some distance metric
-- Generates a signal according to a threshold
+This class implements the basic distance approach to a pairs trading signal in 3 steps:
+- normalizes price data
+- Orders proposed pairs according to a distance metric
+- Generates a signal according to a deviation threshold
 - Outputs a backtest according to a brokerage fee template
 '''
 class BasicDistanceApproach():
 
     def __init__(self) -> None:
+        self.pairs = None
         self.pairsData = None
         self.tradeData = None
         self.NotEnoughColumnsException = 'Dataframe is missing columns. Check that you have both securities and date columns'
         self.dateTimeException = 'Left-Most Column is not of type datetime64'
         self.nonNumericalException = 'Detected non-numerical data-types to the right of date column'
+        self.signals = None
 
 
 
@@ -57,7 +53,7 @@ class BasicDistanceApproach():
     - If there are non-numerical data types 
     Returns true if we can successfully set the pairs data
     '''
-    def setTradeData(self, data: pd.DataFrame) -> bool:
+    def setSignalData(self, data: pd.DataFrame) -> bool:
         if self.isDataWellFormed(data):
             self.tradeData = data
             return True
@@ -80,9 +76,36 @@ class BasicDistanceApproach():
 
     '''
     Generates Pairs:
-    Returns a dataframe with all the pair names and their distance values
+    - Build list of all possible pairs
+    - Sort list according to distance function
+    - Sets the top n best pairs as the pairs field in the class
+    Args:
+    - distanceFunc: a function that measures the distance (see DistanceFunctions.py)
+    - top: the number of pairs to select from the n best candidates
+
+    The pairs field is a list of data frames structured as follows:
+    Date | Asset_Price1 | Asset_Price2 | Asset_Price1_Normalized | Asset_Price2_Normalized | Normalized_Spread
     '''
-    def generatePairs(self,distanceFunc):
+    def generatePairs(self, distanceFunc: DistanceFunctions.__call__, top: int):
+        pass
+
+    '''
+    Retrieves the stored pairs in the object. Raises an exception if the pairs have not yet been generated.
+    '''
+    def getPairs(self):
+        if self.pairs != None:
+            return self.pairs
+        else:
+            raise Exception('Error: Pairs have not yet been generated.')
+
+    '''
+    Adds a signal column to each data frame within the pairs list (self.pairs).
+    A signal  is in the form of an integer:
+    1 -> Buy the spread
+    -1 -> Sell the spread
+    0 -> Close the position
+    '''
+    def addTradeSignals():
         pass
         
 
