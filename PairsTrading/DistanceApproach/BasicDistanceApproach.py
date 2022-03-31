@@ -52,7 +52,7 @@ class BasicDistanceApproach():
         - If there are non-numerical data types 
         Returns true if we can successfully set the pairs data
         '''
-        if self.isDataWellFormed(data):
+        if self.__isDataWellFormed(data):
             self.renameDateColumn(data) 
             self.data = data
             return True
@@ -69,15 +69,16 @@ class BasicDistanceApproach():
         - If there are non-numerical data types 
         Returns true if we can successfully set the pairs data
         '''
-        if self.isDataWellFormed(data):
+        if self.__isDataWellFormed(data):
             #Rename the date column to date for good measure
             self.renameDateColumn(data)
             self.tradeData = data
             return True
    
     @staticmethod
-    def isDataWellFormed(data: pd.DataFrame) -> bool:
+    def __isDataWellFormed(data: pd.DataFrame) -> bool:
         '''
+        Private Method: Do not call outside of class
         Checks whether a dataframe conforms to requirements to store in DistanceApproach class
         '''
         t = lambda x: is_numeric_dtype(x) 
@@ -91,7 +92,28 @@ class BasicDistanceApproach():
         else:
             return True
 
+
+    #Todo: refactor this out of the class later 
+    def normalizeSeries(self, priceSeries: pd.Series):
+        return (priceSeries - min(priceSeries))/(max(priceSeries-min(priceSeries)))
+
     
+    def __normalizePairs(self):
+        '''
+        Private Method: Do not call outside of class
+        Args:
+        takes a dataframe structured as follows:
+        Date | security1 | security2
+        Reformats as
+        Date | security1 | security2 | security1_normalized | security2_normalized | normalized_spread
+        '''  
+        for pair in self.pairs:
+            a = pair.columns[1]
+            b = pair.columns[2]
+            pair[a + '_norm'] = self.normalizeSeries(pair[a])
+            pair[b + '_norm'] = self.normalizeSeries(pair[b])
+            pair['Spread'] = pair[a + '__norm'] - pair[b + '__norm']
+
     def generatePairs(self, distanceFunc: DistanceFunctions.__call__, top: int):
         '''
         Generates Pairs:
@@ -114,10 +136,12 @@ class BasicDistanceApproach():
                     allPairs.append(self.pairsData[['Date',i,j]])
 
         #Uses a lambda to calculate the distance metric for all pairs
-        calcDistance = lambda x: distanceFunc(x.iloc[1],x.iloc[2])
+        #
+        calcDistance = lambda x: distanceFunc(self.normalizeSeries(x.iloc[1]),self.normalizeSeries(x.iloc[2]))
         allPairs.sort(key=calcDistance)
         if top <= len(allPairs):
             self.pairs = allPairs[0:top]
+        self.__normalizePairs()
 
    
     def getPairs(self):

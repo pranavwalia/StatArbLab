@@ -1,7 +1,4 @@
 from datetime import datetime
-from turtle import distance
-
-from sympy import Basic
 from BasicDistanceApproach import BasicDistanceApproach
 import unittest
 import pandas as pd
@@ -43,13 +40,18 @@ class TestDistanceApproach(unittest.TestCase):
         exampleDate = pd.to_datetime(datetime(2020,4,5)) 
         wellFormedDF = pd.DataFrame({'r': [exampleDate], 'Price1' : [1], 'Price2' : [2.4494]})
         distanceClass = BasicDistanceApproach()
-        BasicDistanceApproach.renameDateColumn(wellFormedDF)
+        distanceClass.renameDateColumn(wellFormedDF)
         self.assertEqual(wellFormedDF.columns[0],'Date')
 
     def testGeneratePairs(self):
         '''
         Tests the generate pairs function on the BasicDistanceApproach class
         '''
+        distanceClass = BasicDistanceApproach()
+        #Dummy Data
+        dummyData = pd.DataFrame()
+        distanceClass.setPairsData(dummyData)
+        #self.assertEqual(distanceClass.pairs,)
 
 
 
