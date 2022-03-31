@@ -3,7 +3,7 @@ StatArbLab is a library featuring convinient and scalable implementations of var
 StatArbLab is designed to serve students, academics, and quantitative researchers alike.
 
 ## Modules
-[Pairs Trading](/PairsTrading/)
-    [Distance Approach](/PairsTrading/DistanceApproach/)
-    [Cointegration Approach](/PairsTrading/CointegrationMethod/) 
-    [Kalman Filter Approach](/PairsTrading/KalmanFilterMethod/)
+### Pairs Trading
+[Distance Approach](/PairsTrading/DistanceApproach/)
+[Cointegration Approach](/PairsTrading/CointegrationMethod/) 
+[Kalman Filter Approach](/PairsTrading/KalmanFilterMethod/)
