@@ -1,5 +1,5 @@
 # StatArbLab
-StatArbLab is a library featuring convinient and scalable implementations of various statistical arbitrage techniques. The library utilizes vectorized backtesting and customizable brokerage fee structures.
+StatArbLab is a library featuring convinient and scalable implementations of various statistical arbitrage techniques. The library utilizes vectorized backtesting with customizable brokerage fee structures.
 StatArbLab is designed to serve students, academics, and quantitative researchers alike.
 
 ## Modules
