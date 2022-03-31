@@ -4,6 +4,6 @@ StatArbLab is designed to serve students, academics, and quantitative researcher
 
 ## Modules
 [Pairs Trading](/PairsTrading/)
-    [Distance Approach](/PairsTrading/DistanceApproach/) - Supported
-    [Cointegration Approach](/PairsTrading/CointegrationMethod/) In Progress
+    [Distance Approach](/PairsTrading/DistanceApproach/)
+    [Cointegration Approach](/PairsTrading/CointegrationMethod/) 
     [Kalman Filter Approach](/PairsTrading/KalmanFilterMethod/)
