@@ -207,7 +207,7 @@ class BasicDistanceApproach():
             signalTracker = [0]
             #Helper function which adds the signals to the signal tracker
             def signalLogic(val):
-                f = lambda x: 1 if val >= threshold*sigma else (-1 if val <= -threshold*sigma else signalTracker[-1])
+                f = lambda x: -1 if val >= threshold*sigma else (1 if val <= -threshold*sigma else signalTracker[-1])
                 if val < 0 and signalTracker[-1] == 1 or val > 0 and signalTracker[-1] == -1:
                     signalTracker.append(0)
                     return 0
