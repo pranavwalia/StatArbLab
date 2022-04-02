@@ -207,8 +207,8 @@ class BasicDistanceApproach():
             trainPair: pd.DataFrame = self.trainPairs[i]
             testPair: pd.DataFrame = self.testPairs[i]
             sigma = int
-            mu = trainPair['Spread'].mean
-            squaredDiff = (trainPair['Spread'] - mu)**2
+            mu = trainPair['Spread'].mean()
+            squaredDiff = (trainPair['Spread'] - mu).pow(2)
             if len(trainPair.index > 0):
                 sigma = sqrt(sum(squaredDiff)/(len(trainPair.index) - 1))
             else:
@@ -237,7 +237,11 @@ class BasicDistanceApproach():
         for pair in self.testPairs:
             if not "Signal" in pair.columns:
                 raise Exception("Signals have not yet been generated")
-            pair["Returns"] = (pair.iloc[1] - pair.iloc[2]).pct_change() * pair["Signal"]
+            a = pair.columns[1] + '_Returns'
+            b = pair.columns[2] + '_Returns'
+            pair[a] = pair.iloc[:,1].pct_change()
+            pair[b] = pair.iloc[:,1].pct_change()
+            pair["Returns"] = (pair.iloc[:,1] - pair.iloc[:,2]).pct_change() * pair["Signal"]
 
              
     def plotEquityCurve():
