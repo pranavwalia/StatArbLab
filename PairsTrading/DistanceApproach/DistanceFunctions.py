@@ -9,6 +9,7 @@ class DistanceFunctions():
     '''
     The sum of the squared distances between two securities
     '''
-    def sumSquaredDistance(self, priceSeriesA: pd.Series, priceSeriesB: pd.Series) -> float:
+    @staticmethod
+    def sumSquaredDistance(priceSeriesA: pd.Series, priceSeriesB: pd.Series) -> float:
         squaredDifferenceSum = ((priceSeriesB-priceSeriesA)**2)
         return sum(squaredDifferenceSum)

@@ -18,10 +18,14 @@ class BasicDistanceApproach():
     '''
 
     def __init__(self) -> None:
+        #Training Pairs
         self.trainPairs = List[pd.DataFrame]
+        #Testing Pairs
         self.testPairs = List[pd.DataFrame]
-        self.pairsData = pd.DataFrame
-        self.tradeData = pd.DataFrame
+        #Training Data
+        self.dataTrain = pd.DataFrame
+        #Testing Data
+        self.dataTest = pd.DataFrame
         self.NotEnoughColumnsException = 'Dataframe is missing columns. Check that you have both securities and date columns'
         self.dateTimeException = 'Left-Most Column is not of type datetime64'
         self.nonNumericalException = 'Detected non-numerical data-types to the right of date column'
@@ -55,7 +59,7 @@ class BasicDistanceApproach():
         '''
         if self.__isDataWellFormed(data):
             self.renameDateColumn(data) 
-            self.data = data
+            self.dataTrain = data
             return True
 
     
@@ -73,7 +77,7 @@ class BasicDistanceApproach():
         if self.__isDataWellFormed(data):
             #Rename the date column to date for good measure
             self.renameDateColumn(data)
-            self.tradeData = data
+            self.dataTest = data
             return True
    
     @staticmethod
@@ -110,12 +114,16 @@ class BasicDistanceApproach():
         Reformats as
         Date | security1 | security2 | security1_normalized | security2_normalized | normalized_spread
         '''  
-        for trainPair, testPair in self.trainPairs, self.testPairs:
+        for i in range(len(self.trainPairs)):
+            trainPair: pd.DataFrame = self.trainPairs[i]
+            testPair: pd.DataFrame = self.testPairs[i]
             a = trainPair.columns[1]
             b = trainPair.columns[2]
-            trainPair[a + '_norm'] = self.normalizeSeries(trainPair[a])
-            trainPair[b + '_norm'] = self.normalizeSeries(trainPair[b])
-            trainPair['Spread'] = trainPair[a + '__norm'] - trainPair[b + '__norm']
+            anorm = a + '_norm'
+            bnorm = b + '_norm'
+            trainPair[anorm] = self.normalizeSeries(trainPair[a])
+            trainPair[bnorm] = self.normalizeSeries(trainPair[b])
+            trainPair['Spread'] = trainPair[anorm] - trainPair[bnorm]
             #Save the min and max from the train dataset to normalize the test dataset
             mina = min(trainPair[a])
             maxa = max(trainPair[a])
@@ -124,9 +132,9 @@ class BasicDistanceApproach():
 
             a = testPair.columns[1]
             b = testPair.columns[2]
-            testPair[a + '_norm'] = self.normalizeSeries(testPair[a], mina, maxa)
-            testPair[b + '_norm'] = self.normalizeSeries(testPair[b], minb, maxb)
-            testPair['Spread'] = testPair[a + '__norm'] - testPair[b + '__norm']
+            testPair[anorm] = self.normalizeSeries(testPair[a], mina, maxa)
+            testPair[bnorm] = self.normalizeSeries(testPair[b], minb, maxb)
+            testPair['Spread'] = testPair[anorm] - testPair[bnorm]
 
 
     def generatePairs(self, distanceFunc: DistanceFunctions.__call__, top: int):
@@ -144,22 +152,22 @@ class BasicDistanceApproach():
 
         Date | Asset_Price1 | Asset_Price2 | Asset_Price1_Normalized | Asset_Price2_Normalized | Normalized_Spread
         '''
-        allPairs = List[pd.DataFrame]
-        tradePairs = List[pd.DataFrame]
-        for i in self.pairsData.columns:
-            for j in self.pairsData.columns:
+        allPairs = []
+        tradePairs = []
+        for i in self.dataTrain.columns[1:]:
+            for j in self.dataTrain.columns[1:]:
                 if i != j:
-                    allPairs.append(self.pairsData[['Date', i, j]])
+                    allPairs.append(self.dataTrain[['Date', i, j]])
 
         #Uses a lambda to calculate the distance metric for all pairs
-        calcDistance = lambda x: distanceFunc(self.normalizeSeries(x.iloc[1]),self.normalizeSeries(x.iloc[2]))
+        calcDistance = lambda x: distanceFunc(self.normalizeSeries(x.iloc[:,1]),self.normalizeSeries(x.iloc[:,2]))
         allPairs.sort(key=calcDistance)
         if top <= len(allPairs):
             allPairs = allPairs[0:top]
             self.trainPairs = allPairs 
         #Select the pairs from the test dataset for the backtest later
         for pair in allPairs:
-            tradePairs.append(self.tradeData[pair.columns])
+            tradePairs.append(self.dataTest[pair.columns])
         self.testPairs = tradePairs     
         self.__normalizePairs()
 
@@ -195,7 +203,7 @@ class BasicDistanceApproach():
         If the spread exceeds the threshold of negative standard deviations - sell
         If the spread crosses 0 - close the position
         '''
-        for trainPair, testPair in self.trainPairs, self.testPairs:
+        for trainPair, testPair in self.trainPairs[:,1:], self.testPairs[:,1:]:
             sigma = int
             mu = trainPair['Spread'].mean
             squaredDiff = (trainPair['Spread'] - mu)**2
