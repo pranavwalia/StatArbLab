@@ -154,9 +154,11 @@ class BasicDistanceApproach():
         '''
         allPairs = []
         tradePairs = []
+        pairsAdded = []
         for i in self.dataTrain.columns[1:]:
             for j in self.dataTrain.columns[1:]:
-                if i != j:
+                if i != j and not [j,i] in pairsAdded:
+                    pairsAdded.append[i,j]
                     allPairs.append(self.dataTrain[['Date', i, j]])
 
         #Uses a lambda to calculate the distance metric for all pairs
