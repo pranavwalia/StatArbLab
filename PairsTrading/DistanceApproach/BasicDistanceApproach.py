@@ -154,11 +154,9 @@ class BasicDistanceApproach():
         '''
         allPairs = []
         tradePairs = []
-        pairsAdded = []
         for i in self.dataTrain.columns[1:]:
             for j in self.dataTrain.columns[1:]:
-                if i != j and not [j,i] in pairsAdded:
-                    pairsAdded.append[i,j]
+                if i != j:
                     allPairs.append(self.dataTrain[['Date', i, j]])
 
         #Uses a lambda to calculate the distance metric for all pairs
@@ -205,7 +203,9 @@ class BasicDistanceApproach():
         If the spread exceeds the threshold of negative standard deviations - sell
         If the spread crosses 0 - close the position
         '''
-        for trainPair, testPair in self.trainPairs[:,1:], self.testPairs[:,1:]:
+        for i in range(len(self.trainPairs)):
+            trainPair: pd.DataFrame = self.trainPairs[i]
+            testPair: pd.DataFrame = self.testPairs[i]
             sigma = int
             mu = trainPair['Spread'].mean
             squaredDiff = (trainPair['Spread'] - mu)**2
